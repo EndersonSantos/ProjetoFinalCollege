@@ -1,0 +1,6 @@
+data/
+analysis/
+#projetofinal/data_missing/*
+#projetofinal/data_train/*
+#projetofinal/final_data/*
+__pycache__
