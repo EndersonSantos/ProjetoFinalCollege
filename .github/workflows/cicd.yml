@@ -6,10 +6,9 @@ on:
       - main
 
 jobs:
-  
-  set_up:
+  test:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -18,21 +17,14 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.x
-      
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
-  
-  test:
-    runs-on: ubuntu-latest
-    steps:
+        run: |
+          pip install -r requirements.txt
+          pip install black
+
       - name: Run Black
         run: black . --check --diff
-        
-      - name: Run tests
-        run: pytest
 
-  lint:
-    runs-on: ubuntu-latest
-    steps:
       - name: Run tests
         run: pytest
