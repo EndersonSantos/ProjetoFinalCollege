@@ -21,5 +21,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Run Black
+        run: black . --check --diff
+
       - name: Run tests
         run: pytest
