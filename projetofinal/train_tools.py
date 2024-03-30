@@ -1,13 +1,25 @@
 from projetofinal.preprocessing import compute_avg_embedding
 
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
 import pandas as pd
 from gensim.utils import simple_preprocess
 
 
 def train_split(X, y1, y2):
+    """
+    Splits the data into training and testing sets for two different target variables.
 
+    Parameters:
+        X (numpy.ndarray): Feature matrix.
+        y1 (array-like): Target variable 1.
+        y2 (array-like): Target variable 2.
+
+    Returns:
+        tuple: X_train_1, X_test_1, y_train_1, y_test_1 for target variable 1.
+        tuple: X_train_2, X_test_2, y_train_2, y_test_2 for target variable 2.
+    """
     X_train_1, X_test_1, y_train_1, y_test_1 = train_test_split(X, y1, test_size=0.1, random_state=42)
     X_train_2, X_test_2, y_train_2, y_test_2 = train_test_split(X, y2, test_size=0.1, random_state=42)
 
@@ -15,12 +27,36 @@ def train_split(X, y1, y2):
 
 
 def train_model(X, y):
-    clf = XGBClassifier(random_state=42, max_depth=5)
+    """
+    Trains a classification model using XGBoost.
+
+    Parameters:
+        X (numpy.ndarray): Feature matrix.
+        y (array-like): Target variable.
+
+    Returns:
+        XGBClassifier: Trained XGBoost classifier.
+    """
+    clf = XGBClassifier(random_state=42, max_depth=5, verbose=1)
     clf.fit(X, y)
     return clf
 
 
 def return_embeedings(string, word2vec_model, clf_t, clf_s, inverted_mapping_t, inverted_mapping_s):
+    """
+    Returns predictions for the territory and sector based on the input string.
+
+    Parameters:
+        string (str): Input string to predict territory and sector.
+        word2vec_model (Word2Vec): Word2Vec model used to compute embeddings.
+        clf_t: Classifier for territory prediction.
+        clf_s: Classifier for sector prediction.
+        inverted_mapping_t (dict): Inverted mapping for territory prediction.
+        inverted_mapping_s (dict): Inverted mapping for sector prediction.
+
+    Returns:
+        tuple: Predicted territory and sector as strings.
+    """
     case = pd.DataFrame({'DescricaoInstrumento': [string]})
     case['tokenized_Descricao_text'] = case['DescricaoInstrumento'].apply(lambda x: simple_preprocess(x))
     case['avg_embedding'] = case['tokenized_Descricao_text'].apply(compute_avg_embedding, args=(word2vec_model,))
@@ -52,6 +88,20 @@ def map_numbers_to_categories(numbers, category_mapping):
 
 
 def pred_all(df, word2vec_model, clf_ter, clf_sec, inverted_mapping_ter, inverted_mapping_sec):
+    """
+    Predicts territories and sectors for all descriptions in the DataFrame.
+
+    Parameters:
+        df (DataFrame): DataFrame containing descriptions to predict territories and sectors for.
+        word2vec_model (Word2Vec): Word2Vec model used to compute embeddings.
+        clf_ter: Classifier for territory prediction.
+        clf_sec: Classifier for sector prediction.
+        inverted_mapping_ter (dict): Inverted mapping for territory prediction.
+        inverted_mapping_sec (dict): Inverted mapping for sector prediction.
+
+    Returns:
+        DataFrame: DataFrame with predicted territories and sectors.
+    """
     all_str_ter = []
     all_str_sec = []
 
@@ -67,3 +117,25 @@ def pred_all(df, word2vec_model, clf_ter, clf_sec, inverted_mapping_ter, inverte
     df["ter_pred"] = all_str_ter
 
     return df
+
+
+def eval_model(df):
+    """
+    Evaluates the accuracy of territory and sector predictions.
+
+    Parameters:
+        df (DataFrame): DataFrame containing true and predicted territory and sector labels.
+
+    Prints:
+        float: Accuracy of territory predictions.
+        float: Accuracy of sector predictions.
+    """
+    y_sec_pred = df["sec_pred"]
+    y_ter_pred = df["ter_pred"]
+    y_sec_true = df["SetorInstitucionalCon"]
+    y_ter_true = df["TerritorioCon"]
+
+    accuracy_sec = accuracy_score(y_sec_true, y_sec_pred)
+    accuracy_ter = accuracy_score(y_ter_true, y_ter_pred)
+    print("Accuracy Territory:", accuracy_ter)
+    print("Accuracy Sector:", accuracy_sec)

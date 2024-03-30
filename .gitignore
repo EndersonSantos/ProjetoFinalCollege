@@ -4,3 +4,4 @@ analysis/
 #projetofinal/data_train/*
 #projetofinal/final_data/*
 __pycache__
+*.csv 
