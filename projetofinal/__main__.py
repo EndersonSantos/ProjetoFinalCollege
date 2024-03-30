@@ -1,4 +1,11 @@
-from projetofinal.preprocessing import map_dict, embbeded_model, embedded_data, save_as_pickle, read_pickle, read_data
+from projetofinal.preprocessing import (
+    map_dict,
+    embbeded_model,
+    embedded_data,
+    save_as_pickle,
+    read_pickle,
+    read_data,
+)
 from projetofinal.train_tools import train_split, pred_all, train_model, eval_model
 
 import click
@@ -31,53 +38,78 @@ def cli():
     default="xlsx",
     type=click.Choice(["xlsx", "csv"], case_sensitive=False),
 )
-def train(
-    order,
-    data_path,
-    format
-):
+def train(order, data_path, format):
     print(f"Paramns: Order - {order}, Data Path - {data_path}, Format - {format}")
     print("Reading Data")
     df = read_data(data_path, format)
     print("Data has been loaded")
-    if  order == "train":
+    if order == "train":
         df_clean = df.copy()
-        
+
         print("Preprocenssing Data")
         df_clean, inverted_mapping_ter, inverted_mapping_sec = map_dict(df_clean)
         print("Mapping calculated for territory and sector")
         print("Training word to vec model")
         df_clean, word2vec_model = embbeded_model(df_clean)
         print("Word Vec Model created")
-        df_clean, X, y1, y2 = embedded_data(df_clean,  word2vec_model)
+        df_clean, X, y1, y2 = embedded_data(df_clean, word2vec_model)
 
         print("Training both models for territory and sector")
         clf_ter = train_model(X, y1)
         clf_sec = train_model(X, y2)
-        #X_train_1, X_test_1, y_train_1, y_test_1, X_train_2, X_test_2, y_train_2, y_test_2 = train_split(X, y1, y2)
-        
+        # X_train_1, X_test_1, y_train_1, y_test_1, X_train_2, X_test_2, y_train_2, y_test_2 = train_split(X, y1, y2)
+
         print("Savind model")
-        save_as_pickle(inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter)
+        save_as_pickle(
+            inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter
+        )
         print("Model Saved")
 
     elif order == "eval":
         print("Evaluating Model")
         print("Reading  saved models")
-        inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter = read_pickle()
+        (
+            inverted_mapping_ter,
+            inverted_mapping_sec,
+            word2vec_model,
+            clf_sec,
+            clf_ter,
+        ) = read_pickle()
         print("Model Loaded")
         print("Evaluating")
-        df_eval = pred_all(df, word2vec_model, clf_ter, clf_sec, inverted_mapping_ter, inverted_mapping_sec)
+        df_eval = pred_all(
+            df,
+            word2vec_model,
+            clf_ter,
+            clf_sec,
+            inverted_mapping_ter,
+            inverted_mapping_sec,
+        )
         print("print evaluations")
         eval_model(df_eval)
 
     else:
         print("Predictions")
         print("Reading the Saved Model")
-        inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter = read_pickle()
+        (
+            inverted_mapping_ter,
+            inverted_mapping_sec,
+            word2vec_model,
+            clf_sec,
+            clf_ter,
+        ) = read_pickle()
         print("Making the predictions")
-        df_final = pred_all(df, word2vec_model, clf_ter, clf_sec, inverted_mapping_ter, inverted_mapping_sec)
+        df_final = pred_all(
+            df,
+            word2vec_model,
+            clf_ter,
+            clf_sec,
+            inverted_mapping_ter,
+            inverted_mapping_sec,
+        )
         print("Saving Final Dataset")
         df_final.to_csv("projetofinal/final_data/df_final.csv")
+
 
 cli.add_command(train)
 
