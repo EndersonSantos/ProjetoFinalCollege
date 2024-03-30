@@ -76,3 +76,4 @@ wheel==0.43.0
 wrapt==1.16.0
 xgboost==2.0.3
 gradio==3.39.0
+pytest==8.1.1
