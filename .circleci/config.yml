@@ -7,15 +7,25 @@ jobs:
   test-python:
     # Install dependencies and run tests
     docker:
-      - image: cimg/python:3.8-node
+      - image: circleci/python:3.x
     steps:
       - checkout
-      - python/install-packages
-      - run:
-          name: Run tests
-          command: pytest --junitxml=junit.xml || ((($? == 5)) && echo 'Did not find any tests to run.')
-      - store_test_results:
-          path: junit.xml
+      - restore_cache:  # Restore cache for dependencies (optional, improves performance)
+          keys:
+            - v1-dependencies-{{ .version }}  # Cache key based on Python version
+          paths:
+            - ~/.cache/pip
+
+      - run: pip install -r requirements.txt  # Install dependencies
+
+      - save_cache:  # Save cache for dependencies (optional)
+          paths:
+            - ~/.cache/pip
+          key: v1-dependencies-{{ .version }}  # Same cache key
+
+      - run: black . --check --diff  # Run Black code formatter
+
+      - run: pytest  # Run tests using pytest
 
 workflows:
   build-and-test:
