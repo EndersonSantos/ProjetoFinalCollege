@@ -15,6 +15,7 @@ from projetofinal.preprocessing import (
     save_as_pickle,
 )
 
+
 # Define a fixture to generate sample data
 @pytest.fixture
 def sample_data1():
