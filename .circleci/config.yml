@@ -7,7 +7,7 @@ jobs:
   test-python:
     # Install dependencies and run tests
     docker:
-      - image: circleci/config-setup:latest
+      - image: python
     steps:
       - checkout
       - restore_cache:  # Restore cache for dependencies (optional, improves performance)
