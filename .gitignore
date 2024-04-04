@@ -5,3 +5,4 @@ data/
 __pycache__
 *.csv 
 *.xlsx
+.ipynb_checkpoints/
