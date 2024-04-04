@@ -8,7 +8,7 @@ jobs:
       - checkout
       - run:
           name: Build Docker Image
-          command: docker build --platform linux/amd64 --progress plain . -t projetofinal
+          command: docker build --platform linux/amd64 --progress plain . -t projetofinal -f ../Dockerfile
 
   lint:
     docker:
