@@ -1,5 +1,5 @@
 build:
-	docker build --platform linux/amd64 --progress plain . -t projetofinal
+	docker build --platform linux/amd64 --progress plain -t projetofinal .
 
 lint:
 	docker run projetofinal /bin/bash -c "pip install -r requirements.txt && black --check projetofinal/"
