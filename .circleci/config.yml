@@ -1,15 +1,6 @@
 version: 2.1
 
 jobs:
-  build:
-    docker:
-      - image: python
-    steps:
-      - checkout
-      - run:
-          name: Build Docker Image
-          command: docker build --platform linux/amd64 --progress plain . -t projetofinal .
-
   lint:
     docker:
       - image: python
@@ -18,8 +9,8 @@ jobs:
       - run:
           name: Install Dependencies and Lint
           command: |
-            docker run --rm -v $(pwd):/workdir -w /workdir projetofinal /bin/bash -c "make lint"
-
+            pip install -r requirements.txt
+            black . --check --diff
   test:
     docker:
       - image: python
@@ -28,16 +19,13 @@ jobs:
       - run:
           name: Install Dependencies and Run Tests
           command: |
-            docker run --rm -v $(pwd):/workdir -w /workdir projetofinal /bin/bash -c "make test"
+            pytest
 
 workflows:
   version: 2
   build-and-test:
     jobs:
-      - build
-      - lint:
-          requires:
-            - build
+      - lint
       - test:
           requires:
-            - build
+            - lint
