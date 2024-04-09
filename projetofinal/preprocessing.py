@@ -164,7 +164,7 @@ def read_pickle():
         clf_sec: Classifier trained on 'SetorInstitucionalCon' column.
         clf_ter: Classifier trained on 'TerritorioCon' column.
     """
-    with open("projetofinal/models/model_data.pkl", "rb") as f:
+    with open("analysis/model_data.pkl", "rb") as f:
         # Load the data objects in the same order they were saved
         inverted_mapping_ter = pickle.load(f)
         inverted_mapping_sec = pickle.load(f)
