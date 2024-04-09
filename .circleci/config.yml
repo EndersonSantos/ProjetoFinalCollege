@@ -6,20 +6,39 @@ jobs:
       - image: python
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "requirements.txt" }}
+            # This key is used if no exact match is found in caches
+            - v1-dependencies-
       - run:
           name: Install Dependencies and Lint
           command: |
             pip install -r requirements.txt
             black . --check --diff
+      - save_cache:
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+          paths:
+            - ~/.cache/pip
+
   test:
     docker:
       - image: python
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "requirements.txt" }}
+            # This key is used if no exact match is found in caches
+            - v1-dependencies-
       - run:
           name: Install Dependencies and Run Tests
           command: |
             pytest
+      - save_cache:
+          key: v1-dependencies-{{ checksum "requirements.txt" }}
+          paths:
+            - ~/.cache/pip
 
 workflows:
   version: 2
