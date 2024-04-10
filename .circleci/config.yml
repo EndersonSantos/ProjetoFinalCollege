@@ -49,7 +49,7 @@ jobs:
       - run:
           name: Publishing docker image to aws ECR
           command: |
-            sudo pip install awscli
+            pip install awscli
             docker build --platform linux/amd64 --progress plain -t final-project-college:${{ secrets.CI_COMMIT_SHORT_SHA }} .
             aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com
             docker tag final-project-college:${{ secrets.CI_COMMIT_SHORT_SHA }} ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.eu-west-1.amazonaws.com/final-project-college:${{ secrets.CI_COMMIT_SHORT_SHA }}
