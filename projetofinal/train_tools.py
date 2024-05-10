@@ -1,4 +1,5 @@
-from preprocessing import compute_avg_embedding
+from projetofinal.preprocessing import compute_avg_embedding
+
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
@@ -82,12 +83,14 @@ def return_embeedings(
     X = case["avg_embedding"].apply(pd.Series).to_numpy()
 
     prediction_t = clf_t.predict(X)
+    prediction_t_proba = clf_t.predict_proba(X).max()
     str_pred_t = map_numbers_to_categories(prediction_t, inverted_mapping_t)
 
     prediction_s = clf_s.predict(X)
+    prediction_s_proba = clf_s.predict_proba(X).max()
     str_pred_s = map_numbers_to_categories(prediction_s, inverted_mapping_s)
 
-    return str_pred_t[0], str_pred_s[0]
+    return str_pred_t[0], str_pred_s[0], prediction_t_proba, prediction_s_proba
 
 
 def map_numbers_to_categories(numbers, category_mapping):
@@ -124,24 +127,32 @@ def pred_all(
     """
     all_str_ter = []
     all_str_sec = []
+    all_prob_ter = []
+    all_prob_sec = []
 
     for i in range(len(df)):
 
         string = df.DescricaoInstrumento.iloc[i]
-        str_pred_t, str_pred_s = return_embeedings(
-            string,
-            word2vec_model,
-            clf_ter,
-            clf_sec,
-            inverted_mapping_ter,
-            inverted_mapping_sec,
+        str_pred_t, str_pred_s, prediction_t_proba, prediction_s_proba = (
+            return_embeedings(
+                string,
+                word2vec_model,
+                clf_ter,
+                clf_sec,
+                inverted_mapping_ter,
+                inverted_mapping_sec,
+            )
         )
 
         all_str_ter.append(str_pred_t)
         all_str_sec.append(str_pred_s)
+        all_prob_ter.append(round(prediction_t_proba, 3))
+        all_prob_sec.append(round(prediction_s_proba, 3))
 
     df["sec_pred"] = all_str_sec
     df["ter_pred"] = all_str_ter
+    df["sec_probabilidade"] = all_prob_ter
+    df["ter_probabilidade"] = all_prob_sec
 
     return df
 
