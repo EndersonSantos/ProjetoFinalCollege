@@ -132,7 +132,7 @@ def embedded_data(df_clean, words2vec_model):
 
 
 def save_as_pickle(
-    inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter
+    inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter, model_name
 ):
     """
     Saves the inverted mappings, Word2Vec model, and classifiers as pickle files.
@@ -144,7 +144,7 @@ def save_as_pickle(
         clf_sec: Classifier trained on 'SetorInstitucionalCon' column.
         clf_ter: Classifier trained on 'TerritorioCon' column.
     """
-    with open("projetofinal/models/model_data.pkl", "wb") as f:
+    with open(model_name, "wb") as f:
         # Pickle the data objects (ensure they are picklable)
         pickle.dump(inverted_mapping_ter, f)
         pickle.dump(inverted_mapping_sec, f)
@@ -153,7 +153,7 @@ def save_as_pickle(
         pickle.dump(clf_ter, f)
 
 
-def read_pickle():
+def read_pickle(path_to_model):
     """
     Reads the pickled model data from the file.
 
@@ -164,7 +164,7 @@ def read_pickle():
         clf_sec: Classifier trained on 'SetorInstitucionalCon' column.
         clf_ter: Classifier trained on 'TerritorioCon' column.
     """
-    with open("analysis/model_data.pkl", "rb") as f:
+    with open(path_to_model, "rb") as f:
         # Load the data objects in the same order they were saved
         inverted_mapping_ter = pickle.load(f)
         inverted_mapping_sec = pickle.load(f)
