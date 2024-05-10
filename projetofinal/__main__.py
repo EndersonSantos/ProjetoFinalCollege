@@ -33,12 +33,17 @@ def cli():
     default="projetofinal/data_train/01.Dataset FI_06032024.xlsx",
 )
 @click.option(
+    "--model_path",
+    help="path where the model is in your computer and the name of your model",
+    default="model_data.pkl",
+)
+@click.option(
     "--format",
     help="format of the file to read",
     default="xlsx",
     type=click.Choice(["xlsx", "csv"], case_sensitive=False),
 )
-def train(order, data_path, format):
+def train(order, data_path, model_path, format):
     print(f"Paramns: Order - {order}, Data Path - {data_path}, Format - {format}")
     print("Reading Data")
     df = read_data(data_path, format)
@@ -61,7 +66,7 @@ def train(order, data_path, format):
 
         print("Savind model")
         save_as_pickle(
-            inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter
+            inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter, model_path
         )
         print("Model Saved")
 
@@ -74,7 +79,7 @@ def train(order, data_path, format):
             word2vec_model,
             clf_sec,
             clf_ter,
-        ) = read_pickle()
+        ) = read_pickle(model_path)
         print("Model Loaded")
         print("Evaluating")
         df_eval = pred_all(
@@ -97,7 +102,7 @@ def train(order, data_path, format):
             word2vec_model,
             clf_sec,
             clf_ter,
-        ) = read_pickle()
+        ) = read_pickle(model_path)
         print("Making the predictions")
         df_final = pred_all(
             df,
@@ -115,3 +120,4 @@ cli.add_command(train)
 
 if __name__ == "__main__":
     cli()
+    
