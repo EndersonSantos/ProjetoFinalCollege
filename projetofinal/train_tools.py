@@ -1,5 +1,4 @@
 from projetofinal.preprocessing import compute_avg_embedding
-
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
