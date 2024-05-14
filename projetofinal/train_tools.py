@@ -1,9 +1,16 @@
 from projetofinal.preprocessing import compute_avg_embedding
 
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 from xgboost import XGBClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 import pandas as pd
+import numpy as np
+import csv
+import os
 from gensim.utils import simple_preprocess
 
 
@@ -39,7 +46,7 @@ def train_split(X, y1, y2):
     )
 
 
-def train_model(X, y):
+def train_model(X, y, model_name):
     """
     Trains a classification model using XGBoost.
 
@@ -50,9 +57,18 @@ def train_model(X, y):
     Returns:
         XGBClassifier: Trained XGBoost classifier.
     """
-    clf = XGBClassifier(random_state=42, max_depth=5, verbose=1)
-    clf.fit(X, y)
-    return clf
+    if model_name=="xg_boost":
+        model = XGBClassifier(random_state=42, max_depth=5, verbose=1)
+    elif model_name=="decision_tree":
+        model = DecisionTreeClassifier(max_depth=3)
+    elif model_name=="knn":
+        model = KNeighborsClassifier(n_neighbors=5)
+    elif model_name=="logistic":
+        model = LogisticRegression(multi_class='multinomial')
+    elif model_name=="svm":
+        model = SVC()
+    model.fit(X, y)
+    return model
 
 
 def return_embeedings(
@@ -157,23 +173,74 @@ def pred_all(
     return df
 
 
-def eval_model(df):
+def eval_model(df, model_name):
     """
-    Evaluates the accuracy of territory and sector predictions.
+    Evaluate a model's performance based on the given dataframe and return the results
+    as a new row for logging or further analysis.
 
-    Parameters:
-        df (DataFrame): DataFrame containing true and predicted territory and sector labels.
+    The function calculates accuracy, precision, and recall for both territory and sector 
+    predictions. The results are rounded to two decimal places and printed out. The function 
+    then returns these metrics along with the model name as a list.
 
-    Prints:
-        float: Accuracy of territory predictions.
-        float: Accuracy of sector predictions.
+    Args:
+        df (pandas.DataFrame): DataFrame containing the true and predicted labels.
+            Expected columns are 'sec_pred', 'ter_pred', 'SetorInstitucionalCon', and 'TerritorioCon'.
+        model_name (str): The name of the model being evaluated.
+
+    Returns:
+        list: A list containing the model name, accuracy, precision, and recall metrics for both
+              territory and sector predictions.
+
+    Example:
+        new_row = eval_model(df, "MyModel")
     """
     y_sec_pred = df["sec_pred"]
     y_ter_pred = df["ter_pred"]
     y_sec_true = df["SetorInstitucionalCon"]
     y_ter_true = df["TerritorioCon"]
 
-    accuracy_sec = accuracy_score(y_sec_true, y_sec_pred)
-    accuracy_ter = accuracy_score(y_ter_true, y_ter_pred)
+    accuracy_ter = np.round(accuracy_score(y_ter_true, y_ter_pred),2)
+    precision_ter = np.round(precision_score(y_ter_true, y_ter_pred, average='weighted'),2)
+    recall_ter = np.round(recall_score(y_ter_true, y_ter_pred, average='weighted'),2)
+    
+    accuracy_sec = np.round(accuracy_score(y_sec_true, y_sec_pred),2)
+    precision_sec = np.round(precision_score(y_sec_true, y_sec_pred, average='weighted'),2)
+    recall_sec = np.round(recall_score(y_sec_true, y_sec_pred, average='weighted'),2)
+
     print("Accuracy Territory:", accuracy_ter)
+    print("Precision Territory:", precision_ter)
+    print("Recall Territory:", recall_ter)
     print("Accuracy Sector:", accuracy_sec)
+    print("Precision Sector:", precision_sec)
+    print("Recall Sector:", recall_sec)
+
+    new_row = [model_name, accuracy_ter, precision_ter, recall_ter, accuracy_sec, precision_sec, recall_sec]
+
+    return new_row
+
+
+def save_new_row(new_row):
+    
+    """
+    Append a new row to the 'performance.csv' file. If the file does not exist, create it 
+    and add a header row before appending the new row.
+
+    Args:
+        new_row (list): The row to be added to the CSV file. It should contain the values in the 
+                        order that matches the header columns.
+
+    Example:
+        save_new_row([1, 2, 3, 4, 5, 6])
+    """
+    csv_file_path = 'performance.csv'
+    file_exists = os.path.exists(csv_file_path)
+    
+    with open("performance.csv", "a", newline="") as csvfile:
+        writer = csv.writer(csvfile)
+
+        if not file_exists:
+            header =  ["Model Name", "Accuracy Territory", "Precision Territory", "Recall Territory", "Accuracy Sector", "Precision Sector", "Recall Sector"]
+            writer.writerow(header)
+
+        # Write the new row
+        writer.writerow(new_row)
