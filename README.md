@@ -21,13 +21,13 @@ ps:
 
 4.  Faça a previsão usando o comando abaixo
 ```python
-python -m projetofinal train --order "pred" --format "csv"  --data_path "data_path"
+python -m projetofinal train --order "pred" --format "csv"  --data_path "data_path" --model_name "name_of_model"
 ```
 ps: indique o formato que o ficheiro dos dados está [csv, xlsx]
 
 5. Para saber a performance do seu modelo compre
 ```python
-python -m projetofinal train --order "eval" --data_path "data_path" --model_path 'model_path'  --format "csv"
+python -m projetofinal train --order "eval" --data_path "data_path" --model_path 'model_path'  --format "csv" --model_name "name_of_model" 
 ```
 
 6. Para correr o dashboard no seu terminal no root directory corra o seguinte comando
