@@ -72,7 +72,7 @@ def train_model(X, y, model_name):
 
 
 def return_embeedings(
-    string, word2vec_model, clf_t, clf_s, inverted_mapping_t, inverted_mapping_s
+    string, word2vec_model, clf_t, clf_s, inverted_mapping_t, inverted_mapping_s, model_name
 ):
     """
     Returns predictions for the territory and sector based on the input string.
@@ -98,16 +98,24 @@ def return_embeedings(
 
     X = case["avg_embedding"].apply(pd.Series).to_numpy()
 
-    prediction_t = clf_t.predict(X)
-    prediction_t_proba = clf_t.predict_proba(X).max()
-    str_pred_t = map_numbers_to_categories(prediction_t, inverted_mapping_t)
+    if model_name != 'svm':   
+        prediction_t = clf_t.predict(X)
+        prediction_t_proba = clf_t.predict_proba(X).max()
+        str_pred_t = map_numbers_to_categories(prediction_t, inverted_mapping_t)
 
-    prediction_s = clf_s.predict(X)
-    prediction_s_proba = clf_s.predict_proba(X).max()
-    str_pred_s = map_numbers_to_categories(prediction_s, inverted_mapping_s)
+        prediction_s = clf_s.predict(X)
+        prediction_s_proba = clf_s.predict_proba(X).max()
+        str_pred_s = map_numbers_to_categories(prediction_s, inverted_mapping_s)
 
-    return str_pred_t[0], str_pred_s[0], prediction_t_proba, prediction_s_proba
+        return str_pred_t[0], str_pred_s[0], prediction_t_proba, prediction_s_proba
+    else:
+        prediction_t = clf_t.predict(X)
+        str_pred_t = map_numbers_to_categories(prediction_t, inverted_mapping_t)
 
+        prediction_s = clf_s.predict(X)
+        str_pred_s = map_numbers_to_categories(prediction_s, inverted_mapping_s)
+
+        return str_pred_t[0], str_pred_s[0]
 
 def map_numbers_to_categories(numbers, category_mapping):
     """Maps numbers back to their corresponding category names using a provided mapping dictionary.
@@ -125,7 +133,7 @@ def map_numbers_to_categories(numbers, category_mapping):
 
 
 def pred_all(
-    df, word2vec_model, clf_ter, clf_sec, inverted_mapping_ter, inverted_mapping_sec
+    df, word2vec_model, clf_ter, clf_sec, inverted_mapping_ter, inverted_mapping_sec, model_name
 ):
     """
     Predicts territories and sectors for all descriptions in the DataFrame.
@@ -149,27 +157,48 @@ def pred_all(
     for i in range(len(df)):
 
         string = df.DescricaoInstrumento.iloc[i]
-        str_pred_t, str_pred_s, prediction_t_proba, prediction_s_proba = (
-            return_embeedings(
-                string,
-                word2vec_model,
-                clf_ter,
-                clf_sec,
-                inverted_mapping_ter,
-                inverted_mapping_sec,
+        if model_name != 'svm':
+            str_pred_t, str_pred_s, prediction_t_proba, prediction_s_proba = (
+                return_embeedings(
+                    string,
+                    word2vec_model,
+                    clf_ter,
+                    clf_sec,
+                    inverted_mapping_ter,
+                    inverted_mapping_sec,
+                    model_name
+                )
             )
-        )
 
-        all_str_ter.append(str_pred_t)
-        all_str_sec.append(str_pred_s)
-        all_prob_ter.append(round(prediction_t_proba, 3))
-        all_prob_sec.append(round(prediction_s_proba, 3))
+            all_str_ter.append(str_pred_t)
+            all_str_sec.append(str_pred_s)
+            all_prob_ter.append(round(prediction_t_proba, 3))
+            all_prob_sec.append(round(prediction_s_proba, 3))
 
-    df["sec_pred"] = all_str_sec
-    df["ter_pred"] = all_str_ter
-    df["sec_probabilidade"] = all_prob_ter
-    df["ter_probabilidade"] = all_prob_sec
+        else:
+            str_pred_t, str_pred_s = (
+                return_embeedings(
+                    string,
+                    word2vec_model,
+                    clf_ter,
+                    clf_sec,
+                    inverted_mapping_ter,
+                    inverted_mapping_sec,
+                    model_name
+                )
+            )
 
+            all_str_ter.append(str_pred_t)
+            all_str_sec.append(str_pred_s)
+
+    if model_name != 'svm':
+        df["sec_pred"] = all_str_sec
+        df["ter_pred"] = all_str_ter
+        df["sec_probabilidade"] = all_prob_ter
+        df["ter_probabilidade"] = all_prob_sec
+    else:
+        df["sec_pred"] = all_str_sec
+        df["ter_pred"] = all_str_ter
     return df
 
 
