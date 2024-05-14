@@ -1,0 +1,5 @@
+Model Name,Accuracy Territory,Precision Territory,Recall Territory,Accuracy Sector,Precision Sector,Recall Sector
+xg_boost,0.97,0.97,0.97,0.96,0.95,0.96
+decision_tree,0.41,0.41,0.41,0.61,0.57,0.61
+knn,0.91,0.91,0.91,0.92,0.92,0.92
+logistic,0.57,0.56,0.57,0.69,0.69,0.69

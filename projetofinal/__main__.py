@@ -6,7 +6,7 @@ from projetofinal.preprocessing import (
     read_pickle,
     read_data,
 )
-from projetofinal.train_tools import train_split, pred_all, train_model, eval_model
+from projetofinal.train_tools import train_split, pred_all, train_model, eval_model, save_new_row
 
 import click
 import pandas as pd
@@ -43,7 +43,13 @@ def cli():
     default="xlsx",
     type=click.Choice(["xlsx", "csv"], case_sensitive=False),
 )
-def train(order, data_path, model_path, format):
+@click.option(
+    "--model_name",
+    help="The model you want to train or use it",
+    default="xg_boost",
+    type=click.Choice(["xg_boost", "decision_tree", "knn", "logistic", "svm"], case_sensitive=False),
+)
+def train(order, data_path, model_path, format, model_name):
     print(f"Paramns: Order - {order}, Data Path - {data_path}, Format - {format}")
     print("Reading Data")
     df = read_data(data_path, format)
@@ -60,8 +66,8 @@ def train(order, data_path, model_path, format):
         df_clean, X, y1, y2 = embedded_data(df_clean, word2vec_model)
 
         print("Training both models for territory and sector")
-        clf_ter = train_model(X, y1)
-        clf_sec = train_model(X, y2)
+        clf_ter = train_model(X, y1, model_name)
+        clf_sec = train_model(X, y2, model_name)
         # X_train_1, X_test_1, y_train_1, y_test_1, X_train_2, X_test_2, y_train_2, y_test_2 = train_split(X, y1, y2)
 
         print("Savind model")
@@ -91,7 +97,9 @@ def train(order, data_path, model_path, format):
             inverted_mapping_sec,
         )
         print("print evaluations")
-        eval_model(df_eval)
+        new_row = eval_model(df_eval, model_name)
+        save_new_row(new_row)
+        print(f"New Performance for the {model_name} model added to the CSV file!")
 
     else:
         print("Predictions")
