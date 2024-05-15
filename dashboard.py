@@ -6,6 +6,8 @@ import pickle
 from projetofinal.preprocessing import compute_avg_embedding, read_pickle
 from projetofinal.train_tools import return_embeedings
 import subprocess
+import os
+
 
 # Apply the theme
 st.set_page_config(
@@ -27,6 +29,13 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+# Model Selection Dropdown
+# Assuming your models are stored with recognizable names in 'projetofinal/models'
+model_files = os.listdir('projetofinal/models')
+model_names = [file.replace('.pkl', '') for file in model_files if file.endswith('.pkl')]
+
+model_name = st.selectbox("Choose a model to use:", options=model_names)
+
 # Initialize session state
 if "selected_example" not in st.session_state:
     st.session_state["selected_example"] = ""
@@ -35,14 +44,14 @@ if "selected_example" not in st.session_state:
 st.subheader("Description")
 user_input = st.text_area("", value=st.session_state["selected_example"], height=150)
 
-# Load pre-trained models and other necessary components
-inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter = (
-    read_pickle('projetofinal/models/model_data_all.pkl')
-)
+# Load pre-trained models and other necessary components based on the selected model
+if model_name:
+    model_path = f'projetofinal/models/{model_name}.pkl'
+    inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter = read_pickle(model_path)
 
 # Predict button
 if st.button("Predict"):
-    if user_input:
+    if user_input and model_name:
         tokens = user_input.lower().split()  # Simple tokenization, adjust as needed
         avg_embedding = compute_avg_embedding(tokens, word2vec_model)
         pred_territory, pred_sector, prediction_t_proba, prediction_s_proba = return_embeedings(
@@ -52,11 +61,14 @@ if st.button("Predict"):
             clf_sec,
             inverted_mapping_ter,
             inverted_mapping_sec,
+            model_name
         )
         st.success(f"Predicted Territory: {pred_territory}")
         st.success(f"Predicted Sector: {pred_sector}")
     else:
-        st.error("Please enter a description.")
+        st.error("Please enter a description and select a model.")
+
+
 
 # Quick example buttons
 st.write("Quick Examples:")
@@ -72,7 +84,7 @@ with col3:
         st.session_state["selected_example"] = "FIS 0.125 03/12/22"
 
 # File upload for prediction
-st.header("Predict from File")
+st.header("Upload a File")
 uploaded_file = st.file_uploader(
     "Upload your file (CSV or Excel)", type=["csv", "xlsx"], key="file-uploader"
 )
@@ -89,61 +101,65 @@ def try_read_csv(uploaded_file):
 
 
 # Function to process and predict the uploaded file
-def process_and_predict_file(uploaded_file):
-    # Read the uploaded file
-    if uploaded_file is not None:
-        if uploaded_file.type == "text/csv":
-            df, encoding_used = try_read_csv(uploaded_file)
-            if df is not None:
-                st.success(f"File read successfully with encoding: {encoding_used}")
-            else:
-                st.error(
-                    "Failed to read the file with common encodings. Please check the file encoding."
-                )
-        else:
-            df = pd.read_excel(uploaded_file, engine="openpyxl")
+def process_and_predict_file(df, model_name):
+    # Load model components based on selected model_name
+    model_path = f'projetofinal/models/{model_name}.pkl'
+    inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter = read_pickle(model_path)
+    
+    # Initialize columns for predictions
+    df["Predicted Territory"] = ""
+    df["Predicted Sector"] = ""
 
-        # Initialize columns for predictions
-        df["Predicted Territory"] = ""
-        df["Predicted Sector"] = ""
+    # Preprocess and predict for each row
+    for index, row in df.iterrows():
+        description = row["DescricaoInstrumento"]
+        tokens = description.lower().split()  # Example tokenization, adjust as needed
+        avg_embedding = compute_avg_embedding(tokens, word2vec_model)
 
-        # Preprocess and predict for each row
-        for index, row in df.iterrows():
-            description = row["DescricaoInstrumento"]
-            # Assuming you have a tokenization and embedding process
-            # similar to what's done for a single string prediction
-            tokens = (
-                description.lower().split()
-            )  # Example tokenization, adjust as needed
-            avg_embedding = compute_avg_embedding(tokens, word2vec_model)
+        # Making predictions
+        pred_territory, pred_sector, prediction_t_proba, prediction_s_proba = return_embeedings(
+            description,
+            word2vec_model,
+            clf_ter,
+            clf_sec,
+            inverted_mapping_ter,
+            inverted_mapping_sec,
+            model_name
+        )
 
-            # Making predictions
-            pred_territory, pred_sector, prediction_t_proba, prediction_s_proba = return_embeedings(
-                description,
-                word2vec_model,
-                clf_ter,
-                clf_sec,
-                inverted_mapping_ter,
-                inverted_mapping_sec,
-            )
+        # Assigning predictions to the dataframe
+        df.at[index, "Predicted Territory"] = pred_territory
+        df.at[index, "Predicted Sector"] = pred_sector
 
-            # Assigning predictions to the dataframe
-            df.at[index, "Predicted Territory"] = pred_territory
-            df.at[index, "Predicted Sector"] = pred_sector
+    return df
 
-        return df
-
-
-# If a file was uploaded, process it and allow the user to download the results
+# Temporary store the uploaded file and show preview
 if uploaded_file is not None:
-    processed_df = process_and_predict_file(uploaded_file)
-    st.write(processed_df)
+    if uploaded_file.type == "text/csv":
+        df, encoding_used = try_read_csv(uploaded_file)
+    else:
+        df = pd.read_excel(uploaded_file, engine="openpyxl")
+    
+    # Store the DataFrame in session state to use later
+    st.session_state['uploaded_df'] = df
+    
+    # Display the first 10 rows of the DataFrame
+    st.write("Preview of uploaded file (first 10 rows):")
+    st.dataframe(df.head(10))
 
-    # Convert DataFrame to CSV for downloading
+# Button to trigger prediction
+if 'uploaded_df' in st.session_state and st.button("Predict from File"):
+    processed_df = process_and_predict_file(st.session_state['uploaded_df'], model_name)
+    st.session_state['processed_df'] = processed_df  # Store processed data for potential download
+    st.write("Predictions completed. Review the predicted data below:")
+    st.dataframe(processed_df.head(10))  # Show first 10 rows of the processed data
+
+    # Show download button after predictions
     csv = processed_df.to_csv(index=False).encode("utf-8")
     st.download_button(
         label="Download predictions as CSV",
         data=csv,
         file_name="predictions.csv",
-        mime="text/csv",
+        mime="text/csv"
     )
+
