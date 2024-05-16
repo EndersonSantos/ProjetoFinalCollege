@@ -39,9 +39,10 @@ def home():
     # Assuming your models are stored with recognizable names in 'projetofinal/models'
     model_files = os.listdir('projetofinal/models')
     model_names = [file.replace('.pkl', '') for file in model_files if file.endswith('.pkl')]
+    
+    default_model_index = model_names.index('xg_boost') if 'xg_boost' in model_names else 0
 
-    model_name = st.selectbox("Choose a model to use:", options=model_names)
-
+    model_name = st.selectbox("Choose a model to use:", options=model_names, index=default_model_index)
     # Initialize session state
     if "selected_example" not in st.session_state:
         st.session_state["selected_example"] = ""
