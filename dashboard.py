@@ -1,7 +1,7 @@
-# Import
 import pandas as pd
 import streamlit as st
 from gensim.models import Word2Vec
+from gensim.utils import simple_preprocess  # Added import
 import pickle
 from projetofinal.preprocessing import compute_avg_embedding, read_pickle
 from projetofinal.train_tools import return_embeedings
@@ -14,6 +14,18 @@ import folium
 from streamlit_folium import folium_static
 import ipywidgets as widgets
 from IPython.display import display, clear_output
+import datetime
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from xgboost import XGBClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, classification_report  
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
 
 # Apply the theme
 st.set_page_config(
@@ -34,6 +46,17 @@ st.markdown(
     "<h4 style='text-align: center; color: gray;'>Prever, através de descritivos, os setor e território de uma transação de um fundo de investimento.</h4>",
     unsafe_allow_html=True,
 )
+
+def try_read_csv(uploaded_file):
+    encodings = ["utf-8", "iso-8859-1", "cp1252"]
+    for enc in encodings:
+        try:
+            return pd.read_csv(uploaded_file, encoding=enc, delimiter=";"), enc
+        except UnicodeDecodeError:
+            continue
+    return None, None
+
+
 def home():
     # Model Selection Dropdown
     # Assuming your models are stored with recognizable names in 'projetofinal/models'
@@ -95,16 +118,6 @@ def home():
     uploaded_file = st.file_uploader(
         "Upload your file (CSV or Excel)", type=["csv", "xlsx"], key="file-uploader"
     )
-
-
-    def try_read_csv(uploaded_file):
-        encodings = ["utf-8", "iso-8859-1", "cp1252"]
-        for enc in encodings:
-            try:
-                return pd.read_csv(uploaded_file, encoding=enc, delimiter=";"), enc
-            except UnicodeDecodeError:
-                continue
-        return None, None
 
 
     # Function to process and predict the uploaded file
@@ -261,21 +274,248 @@ def analysis():
     # Definir a função de retorno de chamada para atualizar os registros quando um novo setor é selecionado
     atualizar_registros(setor_selecionado)
 
- 
+
+def encode_target(label, category_mapping):
+    if label not in category_mapping:
+        new_value = len(category_mapping)
+        category_mapping[label] = new_value
+    return category_mapping[label]
+
+def map_numbers_to_categories(numbers, category_mapping):
+    return [category_mapping.get(number, None) for number in numbers]
+
+def compute_avg_embedding(tokens, word2vec_model, unknown_embedding=[0]*100):
+    embeddings = [word2vec_model.wv[token] for token in tokens if token in word2vec_model.wv]
+    if embeddings:
+        return np.array(embeddings).mean(axis=0)
+    else:
+        return np.array(unknown_embedding)
+
+def training():
+    st.title("Training Models")
+    st.write("Here you can initiate training of models based on the latest data.")
+
+    # Model Selection Dropdown
+    model_files = os.listdir('projetofinal/models')
+    model_names = [file.replace('.pkl', '') for file in model_files if file.endswith('.pkl')]
+    
+    default_model_index = model_names.index('xg_boost') if 'xg_boost' in model_names else 0
+    model_name = st.selectbox("Choose a model to retrain:", options=model_names, index=default_model_index)
+
+    # File upload for bulk data
+    st.header("Upload a File for Retraining")
+    bulk_uploaded_file = st.file_uploader(
+        "Upload your file (CSV or Excel) containing multiple instances", type=["csv", "xlsx"], key="bulk-file-uploader"
+    )
+
+    # Process bulk upload
+    if bulk_uploaded_file is not None:
+        if bulk_uploaded_file.type == "text/csv":
+            bulk_df, encoding_used = try_read_csv(bulk_uploaded_file)
+        else:
+            bulk_df = pd.read_excel(bulk_uploaded_file, engine="openpyxl")
+
+        # Display the first 10 rows of the DataFrame
+        st.write("Preview of uploaded file (first 10 rows):")
+        st.dataframe(bulk_df.head(10))
+
+        # Append bulk data to existing data and proceed with retraining
+        st.session_state['bulk_uploaded_df'] = bulk_df
 
 
+    
+    st.header("Add a single instance")
+    with st.form(key='training_form'):
+        CodEntidadeRef = st.text_input("CodEntidadeRef")
+        TipoInformacao = st.selectbox("TipoInformacao", ["A", "P"])
+        TipoInstrumento = st.selectbox("TipoInstrumento", [
+            "F21", "F22", "F29", "F3_P", "F4", "F511", "F512", "F519", "F521", "F522", "F71"
+        ])
+        DescricaoInstrumento = st.text_input("DescricaoInstrumento")
+        MaturidadeOriginal = st.selectbox("MaturidadeOriginal", [
+            "01", "10", "06", "07", "08", "_Z"
+        ])
+        SetorInstitucionalCon = st.selectbox("SetorInstitucionalCon", [
+            "S11", "S121", "S122", "S123", "S124", "S125", "S126", "S127", "S128", "S129", 
+            "S1311", "S1312", "S1313", "S1314", "S14", "S15"
+        ])
+        TerritorioCon = st.selectbox("TerritorioCon", [
+            "_Z", "1E", "4C", "4D", "4S", "4W", "5C", "5D", "5F", "5H", "5U", "5X", 
+            "7E", "7M", "ABW", "AFG", "AGO", "AND", "ARE", "ARG", "ARM", "ATG", 
+            "AUS", "AUT", "AZE", "BEL", "BEN", "BGD", "BGR", "BHR", "BHS", "BIH", 
+            "BLR", "BLZ", "BMU", "BOL", "BRA", "BRB", "BWA", "CAF", "CAN", "CHE", 
+            "CHL", "CHN", "CIV", "CMR", "COD", "COG", "COL", "CPV", "CRI", "CUB", 
+            "CUW", "CYM", "CYP", "CZE", "DEU", "DJI", "DNK", "DOM", "DZA", "ECU", 
+            "EGY", "ESP", "EST", "ETH", "FIN", "FLK", "FRA", "FRO", "FSM", "GAB", 
+            "GBR", "GEO", "GGY", "GHA", "GIB", "GIN", "GLP", "GNB", "GNQ", "GRC", 
+            "HKG", "HRV", "HUN", "IDN", "IMN", "IND", "IRL", "IRN", "IRQ", "ISL", 
+            "ISR", "ITA", "JEY", "JOR", "JPN", "KAZ", "KEN", "KGZ", "KHM", "KNA", 
+            "KOR", "KWT", "LAO", "LBN", "LBR", "LIE", "LKA", "LTU", "LUX", "LVA", 
+            "MAC", "MAR", "MCO", "MDA", "MDV", "MEX", "MKD", "MLI", "MLT", "MNE", 
+            "MNG", "MOZ", "MRT", "MTQ", "MUS", "MWI", "MYS", "NAM", "NER", "NGA", 
+            "NLD", "NOR", "NZL", "OMN", "PAK", "PAN", "PER", "PHL", "POL", "PRI", 
+            "PRT", "PRY", "PSE", "QAT", "REU", "ROU", "RUS", "SAU", "SDN", "SEN", 
+            "SGP", "SLV", "SRB", "STP", "SVK", "SVN", "SWE", "SWZ", "SYC", "TCA", 
+            "TGO", "THA", "TLS", "TTO", "TUN", "TUR", "TWN", "TZA", "UGA", "UKR", 
+            "URY", "USA", "UZB", "VCT", "VEN", "VGB", "VNM", "ZAF", "ZMB", "ZWE"
+        ])
 
-# Mapeia o nome das páginas às funções correspondentes
+        submit_button = st.form_submit_button(label='Add and Retrain')
+
+    if submit_button or 'bulk_uploaded_df' in st.session_state:
+        if 'bulk_uploaded_df' in st.session_state:
+            new_data_df = st.session_state['bulk_uploaded_df']
+        else:
+            new_data = {
+                "CodEntidadeRef": CodEntidadeRef,
+                "TipoInformacao": TipoInformacao,
+                "TipoInstrumento": TipoInstrumento,
+                "DescricaoInstrumento": DescricaoInstrumento,
+                "MaturidadeOriginal": MaturidadeOriginal,
+                "SetorInstitucionalCon": SetorInstitucionalCon,
+                "TerritorioCon": TerritorioCon
+            }
+            new_data_df = pd.DataFrame([new_data])
+
+        # Add missing columns with NA values
+        missing_columns = ['CodEntidadeCon']
+        for col in missing_columns:
+            new_data_df[col] = pd.NA
+
+        # Load existing training data
+        training_data_path = "projetofinal/data_train/data_train.csv" 
+        existing_data = pd.read_csv(training_data_path)
+
+        # Append new data to existing data
+        updated_data = pd.concat([existing_data, new_data_df], ignore_index=True)
+
+        # Save updated data and backup old data
+        current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        backup_data_path = f"projetofinal/data_train/backup/{current_datetime}_data_train.csv"
+        updated_data_path = "projetofinal/data_train/data_train.csv"
+        existing_data.to_csv(backup_data_path, index=False)  # Backup existing data
+        updated_data.to_csv(updated_data_path, index=False)  # Save updated data
+
+        st.write("New data added successfully. Retraining the model...")
+
+        # Preprocessing
+        updated_data['tokenized_Descricao_text'] = updated_data['DescricaoInstrumento'].apply(lambda x: simple_preprocess(x))
+        word2vec_model = Word2Vec(sentences=updated_data['tokenized_Descricao_text'], vector_size=100, window=5, min_count=1, workers=4)
+
+        updated_data['avg_embedding'] = updated_data['tokenized_Descricao_text'].apply(lambda tokens: compute_avg_embedding(tokens, word2vec_model))
+        X = updated_data['avg_embedding'].apply(pd.Series).to_numpy()
+
+        unique_categories_ter = updated_data['TerritorioCon'].unique()
+        category_mapping_ter = dict(zip(unique_categories_ter, range(len(unique_categories_ter))))
+        inverted_mapping_ter = {value: key for key, value in category_mapping_ter.items()}
+
+        unique_categories_sec = updated_data["SetorInstitucionalCon"].unique()
+        category_mapping_sec = dict(zip(unique_categories_sec, range(len(unique_categories_sec))))
+        inverted_mapping_sec = {value: key for key, value in category_mapping_sec.items()}
+
+        updated_data["encoded_label_territorio"] = updated_data["TerritorioCon"].apply(encode_target, args=[category_mapping_ter])
+        updated_data["encoded_label_setor"] = updated_data['SetorInstitucionalCon'].apply(encode_target, args=[category_mapping_sec])
+
+        y1 = updated_data['encoded_label_territorio']
+        y2 = updated_data['encoded_label_setor']
+
+        # Train Test Split
+        X_train_1, X_test_1, y_train_1, y_test_1 = train_test_split(X, y1, test_size=0.1, random_state=41)
+        X_train_2, X_test_2, y_train_2, y_test_2 = train_test_split(X, y2, test_size=0.1, random_state=41)
+
+        # Model selection and training
+        if model_name == "xg_boost":
+            model_ter = XGBClassifier(random_state=42, max_depth=5)
+            model_sec = XGBClassifier(random_state=42, max_depth=5)
+        elif model_name == "decision_tree":
+            model_ter = DecisionTreeClassifier(max_depth=3)
+            model_sec = DecisionTreeClassifier(max_depth=3)
+        elif model_name == "knn":
+            model_ter = KNeighborsClassifier(n_neighbors=5)
+            model_sec = KNeighborsClassifier(n_neighbors=5)
+        elif model_name == "logistic":
+            model_ter = LogisticRegression(multi_class='multinomial')
+            model_sec = LogisticRegression(multi_class='multinomial')
+        elif model_name == "svm":
+            model_ter = SVC()
+            model_sec = SVC()
+
+        model_ter.fit(X_train_1, y_train_1)
+        model_sec.fit(X_train_2, y_train_2)
+
+        # Backup old models
+        backup_path = f"projetofinal/models/backup/{current_datetime}_{model_name}.pkl"
+        os.rename(f'projetofinal/models/{model_name}.pkl', backup_path)
+
+        # Save the retrained models
+        model_path = f'projetofinal/models/{model_name}.pkl'
+        with open(model_path, 'wb') as f:
+            pickle.dump(inverted_mapping_ter, f)
+            pickle.dump(inverted_mapping_sec, f)
+            pickle.dump(word2vec_model, f)
+            pickle.dump(model_sec, f)
+            pickle.dump(model_ter, f)
+
+        st.write(f"Model {model_name} retrained and saved successfully.")
+
+        # Model evaluation
+        st.write("Evaluating the retrained model...")
+
+        # Predictions on the test set
+        y_pred_ter = model_ter.predict(X_test_1)
+        y_pred_sec = model_sec.predict(X_test_2)
+
+        # Metrics calculation
+        accuracy_ter = accuracy_score(y_test_1, y_pred_ter)
+        precision_ter = precision_score(y_test_1, y_pred_ter, average='weighted')
+        recall_ter = recall_score(y_test_1, y_pred_ter, average='weighted')
+
+        accuracy_sec = accuracy_score(y_test_2, y_pred_sec)
+        precision_sec = precision_score(y_test_2, y_pred_sec, average='weighted')
+        recall_sec = recall_score(y_test_2, y_pred_sec, average='weighted')
+
+        # Display metrics
+        st.write("### Territory Model Performance")
+        st.write(f"Accuracy: {accuracy_ter:.4f}")
+        st.write(f"Precision: {precision_ter:.4f}")
+        st.write(f"Recall: {recall_ter:.4f}")
+
+        st.write("### Sector Model Performance")
+        st.write(f"Accuracy: {accuracy_sec:.4f}")
+        st.write(f"Precision: {precision_sec:.4f}")
+        st.write(f"Recall: {recall_sec:.4f}")
+
+        # Classification report
+        st.write("### Territory Model Classification Report")
+        st.text(classification_report(y_test_1, y_pred_ter))
+
+        st.write("### Sector Model Classification Report")
+        st.text(classification_report(y_test_2, y_pred_sec))
+
+        # Confusion matrices
+        fig, axes = plt.subplots(1, 2, figsize=(15, 5))
+        sns.heatmap(pd.crosstab(y_test_1, y_pred_ter), annot=True, fmt='d', ax=axes[0])
+        axes[0].set_title('Territory Model Confusion Matrix')
+        axes[0].set_xlabel('Predicted')
+        axes[0].set_ylabel('Actual')
+
+        sns.heatmap(pd.crosstab(y_test_2, y_pred_sec), annot=True, fmt='d', ax=axes[1])
+        axes[1].set_title('Sector Model Confusion Matrix')
+        axes[1].set_xlabel('Predicted')
+        axes[1].set_ylabel('Actual')
+
+        st.pyplot(fig)
+
+        st.write("Retraining and evaluation completed.")
+
 
 pages = {
     "Principal": {"function": home, "icon": "🏠"},
-    "Análises": {"function": analysis, "icon": "📊"}
+    "Análises": {"function": analysis, "icon": "📊"},
+    "Training": {"function": training, "icon": "🏋️"}
 }
 
-# Adicionando uma nova página "Análises" com ícone de análises no sidebar
 selection = st.sidebar.radio("Go to", [f"{pages[key]['icon']} {key}" for key in pages.keys()], index=0)
 
-# Chamando a função correspondente à página selecionada
-page_name = selection.split()[1]  # Extraindo o nome da página do texto selecionado no sidebar
+page_name = selection.split()[1]  
 pages[page_name]["function"]()
-
