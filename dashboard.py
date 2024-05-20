@@ -256,93 +256,86 @@ def analysis():
     st.write(f"Os melhores modelos com base na média entre {metric_name} Territory e {metric_name} Sector são: {', '.join(best_models)}")
 
 
+    # Load territorial data
+    territory_df = pd.read_csv("projetofinal/analysis/territorio_df.csv")
 
-
-    # Carregar dados territoriais
-    territorio_df = pd.read_csv("projetofinal/analysis/territorio_df.csv")
-
-    # Carregar um shapefile do mundo
+    # Load a world shapefile
     world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
-    merged = world.merge(territorio_df, how='left', left_on='iso_a3', right_on='Território')
+    merged = world.merge(territory_df, how='left', left_on='iso_a3', right_on='Território')
 
-    # Criar um mapa folium centrado em uma localização inicial
+    # Create a folium map centered at an initial location
     m = folium.Map(location=[0, 0], zoom_start=2)
 
-# Função para lidar com o clique em um país
-    
+    # Function to handle click on a country
+    def click_handler(feature, **kwargs):
+        iso_a3 = feature['iso_a3']
+        top5 = territory_df[territory_df['Território'] == iso_a3].nlargest(5, 'Contagem')
+        popup_text = f"{feature['Descrição do território']} Top 5:\n"
+        if not top5.empty:
+            for _, row in top5.iterrows():
+                popup_text += f"{row['Token']}:{row['Contagem']}\n"
+        return popup_text
 
-    
-    # Adicionar o GeoDataFrame ao mapa folium
+    # Add GeoDataFrame to the folium map
     folium.GeoJson(
         merged,
         name='geojson',
         tooltip=folium.GeoJsonTooltip(fields=['Descrição do território']),
-        style_function=lambda feature: {'fillColor': '#0E7A0D' if feature['properties']['Território'] in territorio_df['Território'].values else '#ffffff', 'color': '#003300'},  # cor de preenchimento para países com tokens no top 5
-        highlight_function=lambda feature: {'weight': 0},  # remove o destaque dos países
-        popup=folium.Popup(lambda feature: click_handler(feature, territorio_df), max_width=400)  # aumentar a largura máxima da caixa de texto do pop-up
+        style_function=lambda feature: {'fillColor': '#0E7A0D' if feature['properties']['Território'] in territory_df['Território'].values else '#ffffff', 'color': '#003300'},  # fill color for countries with tokens in top 5
+        highlight_function=lambda feature: {'weight': 0},  # remove country highlights
+        popup=folium.Popup(lambda feature: click_handler(feature, territory_df), max_width=400)  # increase max width of popup text box
     ).add_to(m)
-    
-    # Função para lidar com o clique em um país
-    def click_handler(feature, **kwargs):
-        iso_a3 = feature['iso_a3']
-        top5 = territorio_df[territorio_df['Território'] == iso_a3].nlargest(5, 'Contagem')
-        popup_text = f"{feature['Descrição do território']} Top 5:\n"
-        if not top5.empty:
-            for _, row in top5.iterrows():
-                popup_text += f"{row['Token']}:{row['Contagem'] }\n"
-        return popup_text
-    
-     # Adicionar manipuladores de eventos de clique para cada país
+
+    # Add click event handlers for each country
     for _, feature in merged.iterrows():
         iso_a3 = feature['iso_a3']
-        top5 = territorio_df[territorio_df['Território'] == iso_a3].nlargest(5, 'Contagem')
+        top5 = territory_df[territory_df['Território'] == iso_a3].nlargest(5, 'Contagem')
         if not top5.empty:
             geojson = folium.GeoJson(
                 feature['geometry'],
-                style_function=lambda feature: {'fillColor': '#0E7A0D', 'color': '#003300'},  # cor de preenchimento para países com tokens no top 5
-                highlight_function=lambda feature: {'weight': 0},  # remove o destaque dos países
+                style_function=lambda feature: {'fillColor': '#0E7A0D', 'color': '#003300'},  # fill color for countries with tokens in top 5
+                highlight_function=lambda feature: {'weight': 0},  # remove country highlights
                 name='geojson',
-                popup=folium.Popup(click_handler(feature), max_width=400)  # aumentar a largura máxima da caixa de texto do pop-up
+                popup=folium.Popup(click_handler(feature), max_width=400)  # increase max width of popup text box
             )
         else:
             geojson = folium.GeoJson(
                 feature['geometry'],
-                style_function=lambda feature: {'fillColor': '#ffffff', 'color': '#000000'},  # remova a cor de preenchimento para países sem lista
-                highlight_function=lambda feature: {'weight': 0},  # remove o destaque dos países
+                style_function=lambda feature: {'fillColor': '#ffffff', 'color': '#000000'},  # remove fill color for countries without list
+                highlight_function=lambda feature: {'weight': 0},  # remove country highlights
                 name='geojson',
-                popup=None  # sem caixa de texto para países sem lista
+                popup=None  # no text box for countries without list
             )
         geojson.add_to(m)
 
-    # Exibir o mapa interativo
-    st.markdown("### Mapa - Análise por Território")
+    # Display the interactive map
+    st.markdown("### Mapa - Análise de tokens pelo Território")
     folium_static(m)
 
+    # Load sector data
+    sector_df = pd.read_csv('projetofinal/analysis/setor_df.csv')
+    sector_df1 = sector_df.drop(['Unnamed: 0','Descrição do Setor Institucional'], axis = 1)
 
-    setor_df = pd.read_csv('projetofinal/analysis/setor_df.csv')
-    setor_df1 = setor_df.drop(['Unnamed: 0','Descrição do Setor Institucional'], axis = 1)
-    # Função para exibir todos os registros para um determinado setor
-    def registros_por_setor(setor):
-        return setor_df1[setor_df['Setor Institucional'] == setor]
+    # Function to display all records for a given sector
+    def records_per_sector(sector):
+        return sector_df1[sector_df['Setor Institucional'] == sector]
 
-    # Função para atualizar a lista de registros quando um novo setor é selecionado
-    def atualizar_registros(setor_selecionado):
-        st.write(f"Registros para {setor_selecionado} ({setor_df.loc[setor_df['Setor Institucional'] == setor_selecionado, 'Descrição do Setor Institucional'].iloc[0]}):")
-        registros = registros_por_setor(setor_selecionado)
-        st.write(registros)
+    # Function to update the list of records when a new sector is selected
+    def update_records(selected_sector):
+        st.write(f"Records for {selected_sector} ({sector_df.loc[sector_df['Setor Institucional'] == selected_sector, 'Descrição do Setor Institucional'].iloc[0]}):")
+        records = records_per_sector(selected_sector)
+        st.write(records)
 
+    # Get the unique list of institutional sectors
+    st.markdown("### Análise de Tokens por Sector")
+    sectors = sector_df1['Setor Institucional'].unique()
 
-    # Obter a lista única de setores institucionaiss
-    st.markdown("### Análise por Setor")
+    # Create the dropdown menu to select the sector
+    selected_sector = st.selectbox("Select the sector:", sectors, index=0)
 
-    setores = setor_df1['Setor Institucional'].unique()
-
-    # Criar o menu suspenso para selecionar o setor
-    setor_selecionado = st.selectbox("Selecione o setor:", setores, index=0)
-
-    # Definir a função de retorno de chamada para atualizar os registros quando um novo setor é selecionado
-    atualizar_registros(setor_selecionado)
+    # Define the callback function to update records when a new sector is selected
+    update_records(selected_sector)
 
 
 def encode_target(label, category_mapping):
