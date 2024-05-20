@@ -323,7 +323,7 @@ def analysis():
 
     # Function to update the list of records when a new sector is selected
     def update_records(selected_sector):
-        st.write(f"Records for {selected_sector} ({sector_df.loc[sector_df['Setor Institucional'] == selected_sector, 'Descrição do Setor Institucional'].iloc[0]}):")
+        st.write(f"Resgitos do {selected_sector} ({sector_df.loc[sector_df['Setor Institucional'] == selected_sector, 'Descrição do Setor Institucional'].iloc[0]}):")
         records = records_per_sector(selected_sector)
         st.write(records)
 
@@ -332,7 +332,7 @@ def analysis():
     sectors = sector_df1['Setor Institucional'].unique()
 
     # Create the dropdown menu to select the sector
-    selected_sector = st.selectbox("Select the sector:", sectors, index=0)
+    selected_sector = st.selectbox("Selecione o sector:", sectors, index=0)
 
     # Define the callback function to update records when a new sector is selected
     update_records(selected_sector)
