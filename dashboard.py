@@ -454,8 +454,8 @@ def training():
         current_datetime = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         backup_data_path = f"projetofinal/data_train/backup/{current_datetime}_data_train.csv"
         updated_data_path = "projetofinal/data_train/data_train.csv"
-        existing_data.to_csv(backup_data_path, index=False)  # Backup existing data
-        updated_data.to_csv(updated_data_path, index=False)  # Save updated data
+        existing_data.to_csv(backup_data_path, index=False)  
+        updated_data.to_csv(updated_data_path, index=False)  
 
         st.write("New data added successfully. Retraining the model...")
 
@@ -573,12 +573,12 @@ def training():
         performance_df = pd.read_csv("performance.csv")
         new_performance_row = {
             'Model Name': model_name,
-            'Accuracy Territory': accuracy_ter,
-            'Precision Territory': precision_ter,
-            'Recall Territory': recall_ter,
-            'Accuracy Sector': accuracy_sec,
-            'Precision Sector': precision_sec,
-            'Recall Sector': recall_sec
+            'Accuracy Territory': round(accuracy_ter, 2),
+            'Precision Territory': round(precision_ter, 2),
+            'Recall Territory': round(recall_ter, 2),
+            'Accuracy Sector': round(accuracy_sec, 2),
+            'Precision Sector': round(precision_sec, 2),
+            'Recall Sector': round(recall_sec, 2)
         }
 
         # Check if the model already exists in the dataframe
