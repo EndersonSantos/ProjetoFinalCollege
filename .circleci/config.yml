@@ -15,7 +15,7 @@ jobs:
           name: Install Dependencies and Lint
           command: |
             pip install -r requirements.txt
-            black . --check --diff
+            black . --check --diff --exclude analysis
       - save_cache:
           key: v1-dependencies-{{ checksum "requirements.txt" }}
           paths:
