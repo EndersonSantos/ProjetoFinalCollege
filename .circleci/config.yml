@@ -41,20 +41,6 @@ jobs:
           paths:
             - ~/.cache/pip
 
-  publish_docker_image_to_aws:
-    docker:
-      - image: python
-    steps:
-      - checkout
-      - run:
-          name: Publishing docker image to aws ECR
-          command: |
-            pip install awscli
-            docker build --platform linux/amd64 --progress plain -t final-project-college:${CI_COMMIT_SHORT_SHA} .
-            aws ecr get-login-password --region eu-west-1 | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.eu-west-1.amazonaws.com
-            docker tag final-project-college:${CI_COMMIT_SHORT_SHA} ${AWS_ACCOUNT_ID}.dkr.ecr.eu-west-1.amazonaws.com/final-project-college:${CI_COMMIT_SHORT_SHA}
-            docker push ${AWS_ACCOUNT_ID}.ecr.eu-west-1.amazonaws.com/final-project-college:${CI_COMMIT_SHORT_SHA}
-
 workflows:
   version: 2
   build-and-test:
@@ -63,6 +49,3 @@ workflows:
       - test:
           requires:
             - lint
-      - publish_docker_image_to_aws:
-          requires:
-            - test
