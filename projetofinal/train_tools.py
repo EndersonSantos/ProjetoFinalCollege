@@ -57,22 +57,28 @@ def train_model(X, y, model_name):
     Returns:
         XGBClassifier: Trained XGBoost classifier.
     """
-    if model_name=="xg_boost":
+    if model_name == "xg_boost":
         model = XGBClassifier(random_state=42, max_depth=5, verbose=1)
-    elif model_name=="decision_tree":
+    elif model_name == "decision_tree":
         model = DecisionTreeClassifier(max_depth=3)
-    elif model_name=="knn":
+    elif model_name == "knn":
         model = KNeighborsClassifier(n_neighbors=5)
-    elif model_name=="logistic":
-        model = LogisticRegression(multi_class='multinomial')
-    elif model_name=="svm":
+    elif model_name == "logistic":
+        model = LogisticRegression(multi_class="multinomial")
+    elif model_name == "svm":
         model = SVC()
     model.fit(X, y)
     return model
 
 
 def return_embeedings(
-    string, word2vec_model, clf_t, clf_s, inverted_mapping_t, inverted_mapping_s, model_name
+    string,
+    word2vec_model,
+    clf_t,
+    clf_s,
+    inverted_mapping_t,
+    inverted_mapping_s,
+    model_name,
 ):
     """
     Returns predictions for the territory and sector based on the input string.
@@ -98,7 +104,7 @@ def return_embeedings(
 
     X = case["avg_embedding"].apply(pd.Series).to_numpy()
 
-    if model_name != 'svm':   
+    if model_name != "svm":
         prediction_t = clf_t.predict(X)
         prediction_t_proba = clf_t.predict_proba(X).max()
         str_pred_t = map_numbers_to_categories(prediction_t, inverted_mapping_t)
@@ -117,6 +123,7 @@ def return_embeedings(
 
         return str_pred_t[0], str_pred_s[0]
 
+
 def map_numbers_to_categories(numbers, category_mapping):
     """Maps numbers back to their corresponding category names using a provided mapping dictionary.
 
@@ -133,7 +140,13 @@ def map_numbers_to_categories(numbers, category_mapping):
 
 
 def pred_all(
-    df, word2vec_model, clf_ter, clf_sec, inverted_mapping_ter, inverted_mapping_sec, model_name
+    df,
+    word2vec_model,
+    clf_ter,
+    clf_sec,
+    inverted_mapping_ter,
+    inverted_mapping_sec,
+    model_name,
 ):
     """
     Predicts territories and sectors for all descriptions in the DataFrame.
@@ -157,7 +170,7 @@ def pred_all(
     for i in range(len(df)):
 
         string = df.DescricaoInstrumento.iloc[i]
-        if model_name != 'svm':
+        if model_name != "svm":
             str_pred_t, str_pred_s, prediction_t_proba, prediction_s_proba = (
                 return_embeedings(
                     string,
@@ -166,7 +179,7 @@ def pred_all(
                     clf_sec,
                     inverted_mapping_ter,
                     inverted_mapping_sec,
-                    model_name
+                    model_name,
                 )
             )
 
@@ -176,22 +189,20 @@ def pred_all(
             all_prob_sec.append(round(prediction_s_proba, 3))
 
         else:
-            str_pred_t, str_pred_s = (
-                return_embeedings(
-                    string,
-                    word2vec_model,
-                    clf_ter,
-                    clf_sec,
-                    inverted_mapping_ter,
-                    inverted_mapping_sec,
-                    model_name
-                )
+            str_pred_t, str_pred_s = return_embeedings(
+                string,
+                word2vec_model,
+                clf_ter,
+                clf_sec,
+                inverted_mapping_ter,
+                inverted_mapping_sec,
+                model_name,
             )
 
             all_str_ter.append(str_pred_t)
             all_str_sec.append(str_pred_s)
 
-    if model_name != 'svm':
+    if model_name != "svm":
         df["sec_pred"] = all_str_sec
         df["ter_pred"] = all_str_ter
         df["sec_probabilidade"] = all_prob_ter
@@ -207,8 +218,8 @@ def eval_model(df, model_name):
     Evaluate a model's performance based on the given dataframe and return the results
     as a new row for logging or further analysis.
 
-    The function calculates accuracy, precision, and recall for both territory and sector 
-    predictions. The results are rounded to two decimal places and printed out. The function 
+    The function calculates accuracy, precision, and recall for both territory and sector
+    predictions. The results are rounded to two decimal places and printed out. The function
     then returns these metrics along with the model name as a list.
 
     Args:
@@ -228,13 +239,17 @@ def eval_model(df, model_name):
     y_sec_true = df["SetorInstitucionalCon"]
     y_ter_true = df["TerritorioCon"]
 
-    accuracy_ter = np.round(accuracy_score(y_ter_true, y_ter_pred),2)
-    precision_ter = np.round(precision_score(y_ter_true, y_ter_pred, average='weighted'),2)
-    recall_ter = np.round(recall_score(y_ter_true, y_ter_pred, average='weighted'),2)
-    
-    accuracy_sec = np.round(accuracy_score(y_sec_true, y_sec_pred),2)
-    precision_sec = np.round(precision_score(y_sec_true, y_sec_pred, average='weighted'),2)
-    recall_sec = np.round(recall_score(y_sec_true, y_sec_pred, average='weighted'),2)
+    accuracy_ter = np.round(accuracy_score(y_ter_true, y_ter_pred), 2)
+    precision_ter = np.round(
+        precision_score(y_ter_true, y_ter_pred, average="weighted"), 2
+    )
+    recall_ter = np.round(recall_score(y_ter_true, y_ter_pred, average="weighted"), 2)
+
+    accuracy_sec = np.round(accuracy_score(y_sec_true, y_sec_pred), 2)
+    precision_sec = np.round(
+        precision_score(y_sec_true, y_sec_pred, average="weighted"), 2
+    )
+    recall_sec = np.round(recall_score(y_sec_true, y_sec_pred, average="weighted"), 2)
 
     print("Accuracy Territory:", accuracy_ter)
     print("Precision Territory:", precision_ter)
@@ -243,32 +258,47 @@ def eval_model(df, model_name):
     print("Precision Sector:", precision_sec)
     print("Recall Sector:", recall_sec)
 
-    new_row = [model_name, accuracy_ter, precision_ter, recall_ter, accuracy_sec, precision_sec, recall_sec]
+    new_row = [
+        model_name,
+        accuracy_ter,
+        precision_ter,
+        recall_ter,
+        accuracy_sec,
+        precision_sec,
+        recall_sec,
+    ]
 
     return new_row
 
 
 def save_new_row(new_row):
-    
     """
-    Append a new row to the 'performance.csv' file. If the file does not exist, create it 
+    Append a new row to the 'performance.csv' file. If the file does not exist, create it
     and add a header row before appending the new row.
 
     Args:
-        new_row (list): The row to be added to the CSV file. It should contain the values in the 
+        new_row (list): The row to be added to the CSV file. It should contain the values in the
                         order that matches the header columns.
 
     Example:
         save_new_row([1, 2, 3, 4, 5, 6])
     """
-    csv_file_path = 'performance.csv'
+    csv_file_path = "performance.csv"
     file_exists = os.path.exists(csv_file_path)
-    
+
     with open("performance.csv", "a", newline="") as csvfile:
         writer = csv.writer(csvfile)
 
         if not file_exists:
-            header =  ["Model Name", "Accuracy Territory", "Precision Territory", "Recall Territory", "Accuracy Sector", "Precision Sector", "Recall Sector"]
+            header = [
+                "Model Name",
+                "Accuracy Territory",
+                "Precision Territory",
+                "Recall Territory",
+                "Accuracy Sector",
+                "Precision Sector",
+                "Recall Sector",
+            ]
             writer.writerow(header)
 
         # Write the new row

@@ -6,7 +6,13 @@ from projetofinal.preprocessing import (
     read_pickle,
     read_data,
 )
-from projetofinal.train_tools import train_split, pred_all, train_model, eval_model, save_new_row
+from projetofinal.train_tools import (
+    train_split,
+    pred_all,
+    train_model,
+    eval_model,
+    save_new_row,
+)
 
 import click
 import pandas as pd
@@ -47,7 +53,9 @@ def cli():
     "--model_name",
     help="The model you want to train or use it",
     default="xg_boost",
-    type=click.Choice(["xg_boost", "decision_tree", "knn", "logistic", "svm"], case_sensitive=False),
+    type=click.Choice(
+        ["xg_boost", "decision_tree", "knn", "logistic", "svm"], case_sensitive=False
+    ),
 )
 def train(order, data_path, model_path, format, model_name):
     print(f"Paramns: Order - {order}, Data Path - {data_path}, Format - {format}")
@@ -72,7 +80,12 @@ def train(order, data_path, model_path, format, model_name):
 
         print("Savind model")
         save_as_pickle(
-            inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter, model_path
+            inverted_mapping_ter,
+            inverted_mapping_sec,
+            word2vec_model,
+            clf_sec,
+            clf_ter,
+            model_path,
         )
         print("Model Saved")
 
@@ -128,4 +141,3 @@ cli.add_command(train)
 
 if __name__ == "__main__":
     cli()
-    
