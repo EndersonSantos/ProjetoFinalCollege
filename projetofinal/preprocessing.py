@@ -132,7 +132,12 @@ def embedded_data(df_clean, words2vec_model):
 
 
 def save_as_pickle(
-    inverted_mapping_ter, inverted_mapping_sec, word2vec_model, clf_sec, clf_ter, model_name
+    inverted_mapping_ter,
+    inverted_mapping_sec,
+    word2vec_model,
+    clf_sec,
+    clf_ter,
+    model_name,
 ):
     """
     Saves the inverted mappings, Word2Vec model, and classifiers as pickle files.
