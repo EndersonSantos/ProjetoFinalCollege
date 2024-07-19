@@ -52,13 +52,13 @@ Para avaliar a performance dos modelos de forma justa e garantir que generalizam
 
 Criamos um dashboard pra analisar e treinar. 
 Começamos por apresentar uma página principal, que seria a cara do projeto. Aqui havia a possibilidade de fazer uma previsão única, inserindo um descritivo manualmente ou selecionando um dos exemplos rápidos incorporados, e também proceder ao Upload de um ficheiro (excel ou csv) com estrutura semelhante ao dataset original, para que a ferramenta aplicasse o modelo nas várias linhas adicionando as devidas previsões a esse mesmo ficheiro. Após isto, o download do novo ficheiro atualizado era disponibilizado. Ainda assim, após algumas discussões e reuniões fomos desafiados a tornar o nosso dashboard mais completo, e optamos por incluir duas novas páginas: Análises e Training.
-<br>
+<br><br>
 Neste timing foram também treinados novos modelos de diferentes naturezas, que foram posteriormente incluídos no dashboard para que o utilizador pudesse escolher aquele que mais se enquadraria. A página Análises começa por mostrar gráficos de comparação das métricas dos vários modelos disponíveis, para auxiliar na escolha do modelo ideal. Existem os gráficos precision, accuracy e recall. Para além disto, foram incluídas as análises aos tokens que tinham sido previamente desenvolvidas, a análise de tokens por setor e território. Para o território, foi incorporado o mesmo mapa interativo que permite analisar o tema de uma forma mais intuitiva, obtendo os tokens mais frequentes ao selecionar um país. Já para o setor o procedimento é semelhante à exceção do mapa, que é trocado por uma tabela na qual podemos selecionar o setor pretendido e esta mostrará os tokens mais frequentes para o mesmo.
-<br>
+<br><br>
 Por fim, o maior desafio no desenvolvimento do dashboard foi a página Training. O nome é indicativo, uma vez que nesta aba podemos treinar novamente o modelo já existente. Existem dois métodos: Adicionar um caso único ou Upload de um ficheiro. O primeiro recorre ao preenchimento de um formulário com as features que estão normalmente associadas a cada transação. Após o preenchimento do formulário, essa informação resulta numa nova linha que é adicionada ao dataset de treino e o processo de treino ocorre de forma igual ao que havia sido feito. Tanto o dataset de treino como o modelo anterior são armazenados localmente para assegurar que um erro não resulte numa perda maior. Para o upload de um ficheiro, o processo é igual. O sistema recebe um ficheiro e verifica se neste constam as colunas que são necessárias para prosseguir. Após a devida verificação, as linhas do ficheiro são adicionadas ao dataset de treino e o processo repete-se. Após o treino de novos modelos, as métricas que surgem na página de análises são também atualizadas.
 
 
-<br><br>
+<br>
 # Como correr o código
 1. Instale todas as dependencias para o projeto: 
 ```
