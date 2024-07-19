@@ -58,7 +58,7 @@ Neste timing foram também treinados novos modelos de diferentes naturezas, que 
 Por fim, o maior desafio no desenvolvimento do dashboard foi a página Training. O nome é indicativo, uma vez que nesta aba podemos treinar novamente o modelo já existente. Existem dois métodos: Adicionar um caso único ou Upload de um ficheiro. O primeiro recorre ao preenchimento de um formulário com as features que estão normalmente associadas a cada transação. Após o preenchimento do formulário, essa informação resulta numa nova linha que é adicionada ao dataset de treino e o processo de treino ocorre de forma igual ao que havia sido feito. Tanto o dataset de treino como o modelo anterior são armazenados localmente para assegurar que um erro não resulte numa perda maior. Para o upload de um ficheiro, o processo é igual. O sistema recebe um ficheiro e verifica se neste constam as colunas que são necessárias para prosseguir. Após a devida verificação, as linhas do ficheiro são adicionadas ao dataset de treino e o processo repete-se. Após o treino de novos modelos, as métricas que surgem na página de análises são também atualizadas.
 
 
-<br>
+
 # Como correr o código
 1. Instale todas as dependencias para o projeto: 
 ```
