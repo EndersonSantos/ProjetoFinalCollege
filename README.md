@@ -2,7 +2,7 @@
 Este projeto, realizado no âmbito da Unidade Curricular Projeto Final Aplicado em Ciência de Dados, pretende, através da metodologia CRISP-DM, explorar a utilização de técnicas de machine learning que auxiliem a caracterização de registros que compõem o balanço estatístico dos Fundos de Investimento.
 A metodologia CRISP-DM é composta por diversas fases, nomeadamente, a Compreensão do Problema (Business Understanding), a Compreensão dos Dados (Data Understanding), Preparação dos Dados (Data Preparation), Modelagem (Modeling), Interpretação dos Resultados (Evaluation) e, por fim, Implementação (Deployment). 
 
-![estrutura projeto]('imagens/organizar.png')
+![estrutura projeto](imagens/organizar.png)
 
 ### Compreensão do Problema
 O objetivo deste projeto é desenvolver um mecanismo de machine learning para aprimorar o processo estatístico, nomeadamente na categorização de movimentos de fundos de investimento. Esta categorização é atualmente realizada manualmente, podendo originar classificações imprecisas. Desta forma, o objetivo principal é reduzir a incidência de classificações incorretas, utilizando as descrições de instrumentos de investimentos para derivar o setor financeiro e o território da instituição que realiza o movimento, que tem a sua representação no ficheiro nas variáveis "SetorInstitucionalCon" e "TerritorioCon". Como consequência é eliminado o tempo consumido pelo processo manual. Ao implementar este sistema de machine learning, esperamos não apenas aumentar a precisão das classificações, mas também agilizar o fluxo de trabalho, libertando recursos humanos para tarefas mais estratégicas e analíticas.
@@ -39,7 +39,7 @@ Foram desenvolvidos dois modelos de machine learning distintos: um para prever o
 Para realizar as previsões, foram utilizados diversos modelos de machine learning, dos quais destacamos o K-Nearest Neighbors (KNN), Decision Tree, Regressão Logística, Support Vector Machine (SVM) e XGBoost.
 
 ### Performance dos Modelos
-![performance]('imagens/modelos_performance.png')
+![performance](imagens/modelos_performance.png)
 
 Para avaliar a performance dos modelos de forma justa e garantir que generalizam bem com novos dados, o dataset foi dividido em conjuntos de treino e teste, utilizando uma divisão de 80-20, onde 80% dos dados foram utilizados para treinar os modelos e 20% foram reservados para teste. O XGBoost foi o modelo que obteve os melhores resultados nas métricas calculadas de precisão(accuracy), sensibilidade(recall) e precisão(precision), desta maneira, foi escolhido como a melhor opção para o desenvolvimento do nosso projeto. Podem ser consultados abaixo gráficos explicativos que mostram as diversas performances de cada um dos modelos acima mencionados.  <br>
 
@@ -48,7 +48,7 @@ Para avaliar a performance dos modelos de forma justa e garantir que generalizam
 
 
 ## Construção do Dashboard
-![dashboard]('imagens/dashboard.jpg')
+![dashboard](imagens/dashboard.jpg)
 
 Criamos um dashboard pra analisar e treinar. 
 Começamos por apresentar uma página principal, que seria a cara do projeto. Aqui havia a possibilidade de fazer uma previsão única, inserindo um descritivo manualmente ou selecionando um dos exemplos rápidos incorporados, e também proceder ao Upload de um ficheiro (excel ou csv) com estrutura semelhante ao dataset original, para que a ferramenta aplicasse o modelo nas várias linhas adicionando as devidas previsões a esse mesmo ficheiro. Após isto, o download do novo ficheiro atualizado era disponibilizado. Ainda assim, após algumas discussões e reuniões fomos desafiados a tornar o nosso dashboard mais completo, e optamos por incluir duas novas páginas: Análises e Training.
