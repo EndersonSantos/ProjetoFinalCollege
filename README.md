@@ -64,7 +64,7 @@ Por fim, o maior desafio no desenvolvimento do dashboard foi a página Training.
 ```
 pip install -r requirements.txt
 ```
-ps: Certifique que está no diretório certo
+ps: Certifique que está no diretório certo. A versão do python utilizada foi Python 3.10.9
 
 2. Adicione os dados necessários
 - Para treinar o modelo coloque dentro do folder **projetofinal/data_train** adicione os dados que utilizará para treinar o modelo
